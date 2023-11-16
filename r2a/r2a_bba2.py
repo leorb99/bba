@@ -4,6 +4,7 @@ from player.parser import *
 import statistics
 import time
 import math
+import matplotlib.pyplot as plt
 
 
 class R2A_BBA2(IR2A):
@@ -97,7 +98,47 @@ class R2A_BBA2(IR2A):
         pass
 
     def finalization(self):
-        pass
+        self.draw_graphs(self.whiteboard.get_playback_qi(), self.throughputs,
+                         "QIvsThroughput", "Quality Index vs. Throughput", "QI")
+        self.draw_graphs(self.whiteboard.get_playback_buffer_size(), self.throughputs,
+                         "BuffervsThroughput", "Buffer Size vs. Throughput", "Buffer")
+        self.draw_graphs(self.whiteboard.get_playback_buffer_size(), 
+                         self.whiteboard.get_playback_qi(), "BuffervsQI", 
+                         "Buffer Size vs. Quality Index", "Buffer", "QI", tp=False)
+
+    def draw_graphs(self, data1, data2, file_name, title, y_axis_left,
+                    y_axis_right="Mbps", x_axis="execution_time (s)", tp=True):
+        x1 = [item[0] for item in data1]
+        y1 = [item[1] for item in data1]
+        
+        x2 = [item[0] for item in data2]
+        y2 = [item[1] for item in data2]
+        
+        _, ax1 = plt.subplots()
+        ax1.plot(x1, y1, color="blue")
+        ax1.set_xlabel(x_axis)
+        ax1.set_ylabel(y_axis_left, color="blue")
+        ax1.tick_params(axis="y", labelcolor="blue")
+        plt.ylim(min(y1), max(y1) * 4 / 3)
+
+        if tp:
+            ax2 = ax1.twinx()
+            ax2.vlines(x2, [0], y2, color="red")
+            ax2.set_ylabel(y_axis_right, color="red")
+            ax2.tick_params(axis="y", labelcolor="red")
+            plt.ylim(min(y2), max(y2) * 4 / 3)
+        else:
+            ax2 = ax1.twinx()
+            ax2.set_ylabel(y_axis_right, color="green")
+            ax2.tick_params(axis="y", labelcolor="green")
+            plt.ylim(min(y2), max(y2) * 4 / 3)
+            ax1.plot(x2, y2, color="green")
+
+        plt.title(title)
+        plt.savefig(f'./results/{file_name}.png')
+        plt.clf()
+        plt.cla()
+        plt.close()
 
     @staticmethod
     def estimate_immediate_chunck_size():
