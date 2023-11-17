@@ -3,6 +3,7 @@ from player.parser import *
 import time
 import math
 import matplotlib.pyplot as plt
+from base.timer import Timer
 
 
 class R2A_BBA0(IR2A):
@@ -13,7 +14,9 @@ class R2A_BBA0(IR2A):
 
         self.qi = []
         self.throughputs = []
-
+        self.timer = Timer.get_instance()
+        self.request_time = 0
+        
         self.reservoir = 20
         self.upper_reservoir = 54
 
@@ -53,10 +56,14 @@ class R2A_BBA0(IR2A):
                 self.rate_index = math.ceil(ideal_rate_index)
 
         msg.add_quality_id(self.qi[self.rate_index])
+        self.request_time = time.perf_counter()
 
         self.send_down(msg)
 
     def handle_segment_size_response(self, msg):
+        current_time = self.timer.get_current_time()
+        t = time.perf_counter() - self.request_time
+        self.throughputs.append((current_time, (msg.get_bit_length() / t)))
         self.send_up(msg)
 
     def initialize(self):
@@ -97,7 +104,7 @@ class R2A_BBA0(IR2A):
             ax2.set_ylabel(y_axis_right, color="green")
             ax2.tick_params(axis="y", labelcolor="green")
             plt.ylim(min(y2), max(y2) * 4 / 3)
-            ax1.plot(x2, y2, color="green")
+            ax2.plot(x2, y2, color="green")
 
         plt.title(title)
         plt.savefig(f'./results/{file_name}.png')

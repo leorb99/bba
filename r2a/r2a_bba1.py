@@ -12,6 +12,8 @@ class R2A_BBA1(IR2A):
         IR2A.__init__(self, id)
 
         self.qi = []
+        self.timer = Timer.get_instance()
+        self.throughputs = []
 
         # How fast was our last chunk download in bps?
         self.capacity_estimation = 0
@@ -70,8 +72,10 @@ class R2A_BBA1(IR2A):
         self.send_down(msg)
 
     def handle_segment_size_response(self, msg):
+        current_time = self.timer.get_current_time()
         # Estimate network capacity
         time_to_download = time.perf_counter() - self.last_request_time
+        self.throughputs.append((current_time, (msg.get_bit_length() / time_to_download)))
 
         # In bits
         average_chunk_size = msg.get_quality_id()
@@ -130,7 +134,7 @@ class R2A_BBA1(IR2A):
             ax2.set_ylabel(y_axis_right, color="green")
             ax2.tick_params(axis="y", labelcolor="green")
             plt.ylim(min(y2), max(y2) * 4 / 3)
-            ax1.plot(x2, y2, color="green")
+            ax2.plot(x2, y2, color="green")
 
         plt.title(title)
         plt.savefig(f'./results/{file_name}.png')

@@ -5,7 +5,7 @@ import statistics
 import time
 import math
 import matplotlib.pyplot as plt
-
+from base.timer import Timer
 
 class R2A_BBA2(IR2A):
     def __init__(self, id):
@@ -14,8 +14,9 @@ class R2A_BBA2(IR2A):
         # C(t) is system capacity
 
         self.qi = []
+        self.throughput = []
         self.throughputs = []
-
+        self.timer = Timer.get_instance()
         # How many bits per second can our network download
         # in average?
         self.capacity_estimation = 0
@@ -77,11 +78,13 @@ class R2A_BBA2(IR2A):
         # In bits
         average_chunk_size = msg.get_quality_id()
         current_chunk_size = msg.get_bit_length()
-
-        self.throughputs.append(current_chunk_size / time_to_download)
+        estimated_throughput = current_chunk_size / time_to_download
+        
+        self.throughput.append(estimated_throughput)
+        self.throughputs.append((self.timer.get_current_time(), estimated_throughput))
 
         # The avarage throughput in bits per second
-        network_capacity = statistics.mean(self.throughputs)
+        network_capacity = statistics.mean(self.throughput)
 
         # Make reservoir estimation
         target_reservoir = (2 * self.buffer_size) * (
@@ -132,7 +135,7 @@ class R2A_BBA2(IR2A):
             ax2.set_ylabel(y_axis_right, color="green")
             ax2.tick_params(axis="y", labelcolor="green")
             plt.ylim(min(y2), max(y2) * 4 / 3)
-            ax1.plot(x2, y2, color="green")
+            ax2.plot(x2, y2, color="green")
 
         plt.title(title)
         plt.savefig(f'./results/{file_name}.png')
